@@ -3,7 +3,7 @@
 .bin/
 .tmp/
 .DS_STORE
-dist/
+dist/tests.js
 
 # Logs
 logs
