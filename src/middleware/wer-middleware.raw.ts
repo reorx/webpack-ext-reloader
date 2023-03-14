@@ -5,11 +5,8 @@
 /*  This will be converted into a lodash templ., any  */
 /*  external argument must be provided using it       */
 /* -------------------------------------------------- */
-(function(_window) {
-  let window: any
-  if (_window.document !== undefined) {
-    window = _window
-  }
+(function() {
+  try {window} catch {var window: any;};
 
   const injectionContext = this || {chrome: null};
 
