@@ -62,7 +62,6 @@
         default:
           break;
       }
-      sendResponse('ok')
     });
 
     if (runtime.lastError) {
@@ -77,9 +76,7 @@
       if (action.type === SIGN_CONNECT) {
         console.log('on SIG_CONNECT')
         sendResponse(formatter("Connected to Web Extension Hot Reloader"));
-      } else {
-        sendResponse('ok');
-      }
+      } 
     });
 
     const socket = new WebSocket(wsHost)
@@ -163,7 +160,6 @@
         default:
           break;
       }
-      sendResponse('ok')
     });
   }
 
