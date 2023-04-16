@@ -1,5 +1,7 @@
-import { parse } from "useragent";
 import { Server } from "ws";
+
+import { parse } from "@kingyue/useragent";
+
 import { info } from "../utils/logger";
 import SignEmitter from "./SignEmitter";
 

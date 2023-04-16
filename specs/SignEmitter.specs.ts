@@ -1,9 +1,10 @@
 import { assert } from "chai";
-import { SinonSpy, spy } from "sinon";
-import { Agent } from "useragent";
-import SignEmitter from "../src/hot-reload/SignEmitter";
-import * as blockProtection from "../src/utils/block-protection";
-import * as logger from "../src/utils/logger";
+import {
+  SinonSpy,
+  spy,
+} from "sinon";
+
+import { Agent } from "@kingyue/useragent";
 
 import {
   FAST_RELOAD_CALLS,
@@ -13,6 +14,9 @@ import {
   NEW_FAST_RELOAD_CHROME_VERSION,
   NEW_FAST_RELOAD_DEBOUNCING_FRAME,
 } from "../src/constants/fast-reloading.constants";
+import SignEmitter from "../src/hot-reload/SignEmitter";
+import * as blockProtection from "../src/utils/block-protection";
+import * as logger from "../src/utils/logger";
 
 describe("SignEmitter", () => {
   let mockedServer: any;

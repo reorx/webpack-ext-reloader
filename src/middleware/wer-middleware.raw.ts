@@ -37,7 +37,7 @@
   // ========================== Called only on content scripts ============================== //
   function contentScriptWorker() {
     // console.log('contentScriptWorker')
-    runtime.sendMessage({ type: SIGN_CONNECT }).then(msg => console.info(msg));
+    runtime.sendMessage({ type: SIGN_CONNECT })
 
     if (runtime.lastError) {
       console.warn(`Whoops..chrome.runtime.lastError: ${  chrome.runtime.lastError.message}`);
@@ -141,7 +141,7 @@
   // ======================== Called only on extension pages that are not the background ============================= //
   function extensionPageWorker() {
     // console.log('extensionPageWorker')
-    runtime.sendMessage({ type: SIGN_CONNECT }).then(msg => console.info(msg));
+    runtime.sendMessage({ type: SIGN_CONNECT })
 
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
       switch (type) {
