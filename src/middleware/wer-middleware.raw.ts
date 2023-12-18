@@ -5,13 +5,8 @@
 /*  This will be converted into a lodash templ., any  */
 /*  external argument must be provided using it       */
 /* -------------------------------------------------- */
-(function(_window) {
-  let window: any
-  if (_window.document !== undefined) {
-    window = _window
-  }
-
-  const injectionContext = this || {chrome: null};
+(function() {
+  const injectionContext = this || window || {chrome: null};
 
   const { chrome }: any = injectionContext || {};
   const signals: any = JSON.parse('<%= signals %>');
@@ -28,7 +23,7 @@
   } = signals;
   const { RECONNECT_INTERVAL, RECONNECT_MAX_RETRY, SOCKET_ERR_CODE_REF } = config;
 
-  const { runtime, tabs } = chrome;
+  const { extension, runtime, tabs } = chrome;
   const manifest = runtime.getManifest();
 
   // =============================== Helper functions ======================================= //
@@ -39,52 +34,52 @@
 
   // ========================== Called only on content scripts ============================== //
   function contentScriptWorker() {
-    // console.log('contentScriptWorker')
+    logger('contentScriptWorker')
     runtime.sendMessage({ type: SIGN_CONNECT })
 
     if (runtime.lastError) {
-      console.warn(`Whoops..chrome.runtime.lastError: ${  chrome.runtime.lastError.message}`);
+      logger(`Whoops..chrome.runtime.lastError: ${  chrome.runtime.lastError.message}`, 'warn');
     }
 
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
-      console.log('contentScriptWorker.onMessage', type, payload)
+      logger(`contentScriptWorker.onMessage, type=${type} payload=${payload}`)
       switch (type) {
         case SIGN_RELOAD:
-          logger("Detected Changes. Reloading...");
+          logger('contentScriptWorker received SIGN_RELOAD')
           sendResponse('ok, reload')
           setTimeout(() => {
             reloadPage && window?.location.reload();
           }, 100)
           break;
+        case SIGN_CHANGE:
+          logger('contentScriptWorker received SIGN_CHANGE')
         case SIGN_LOG:
-          console.info(payload);
+          logger(`payload: ${payload}`);
+          sendResponse('ok, log')
           break;
         default:
           break;
       }
-      sendResponse('ok')
     });
 
     if (runtime.lastError) {
-      console.warn(`Whoops..chrome.runtime.lastError: ${  chrome.runtime.lastError.message}`);
+      logger(`Whoops..chrome.runtime.lastError: ${  chrome.runtime.lastError.message}`, 'warn');
     }
   }
 
   // ======================== Called only on background scripts ============================= //
   function backgroundWorker() {
-    // console.log('backgroundWorker')
+    logger('backgroundWorker')
     runtime.onMessage.addListener((action: { type: string; payload: any }, sender, sendResponse) => {
       if (action.type === SIGN_CONNECT) {
-        console.log('on SIG_CONNECT')
+        logger('on SIG_CONNECT')
         sendResponse(formatter("Connected to Web Extension Hot Reloader"));
-      } else {
-        sendResponse('ok');
       }
     });
 
     const socket = new WebSocket(wsHost)
     socket.onerror = (event) => {
-      logger(`webpack-ext-reloader: Could not create WebSocket in background worker: ${event}`, 'warn')
+      logger(`Could not create WebSocket in background worker: ${event}`, 'warn')
     }
 
     socket.addEventListener("message", ({ data }: MessageEvent) => {
@@ -143,7 +138,7 @@
 
   // ======================== Called only on extension pages that are not the background ============================= //
   function extensionPageWorker() {
-    // console.log('extensionPageWorker')
+    logger('extensionPageWorker')
     runtime.sendMessage({ type: SIGN_CONNECT })
 
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
@@ -157,21 +152,22 @@
           break;
 
         case SIGN_LOG:
-          console.info(payload);
+          logger(`payload: ${payload}`);
+          sendResponse('ok, log')
           break;
 
         default:
           break;
       }
-      sendResponse('ok')
     });
   }
 
   // ======================= Bootstraps the middleware =========================== //
   runtime.reload
-    ? !window ? backgroundWorker() : extensionPageWorker()
+    // in MV3 background service workers don't have access to the DOM
+    ? (typeof window === 'undefined' || extension.getBackgroundPage() === window) ? backgroundWorker() : extensionPageWorker()
     : contentScriptWorker();
-})(this);
+})();
 
 /* ----------------------------------------------- */
 /* End of Webpack Hot Extension Middleware  */
