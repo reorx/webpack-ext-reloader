@@ -1,5 +1,7 @@
 import { merge } from "lodash";
+import { readFileSync } from "fs";
 import { Chunk, Compilation, Compiler, Entry, version } from "webpack";
+import JSON5 from "json5";
 import { changesTriggerer } from "./hot-reload";
 import { onlyOnDevelopmentMsg } from "./messages/warnings";
 import { middlewareInjector } from "./middleware";
@@ -75,7 +77,12 @@ export default class ExtensionReloaderImpl extends AbstractPluginReloader implem
   }
 
   public _registerPlugin(compiler: Compiler) {
-    const { reloadPage, port, entries, manifest } = merge(defaultOptions, this._opts);
+    const { reloadPage, port, entries, manifest: manifestPath, manifestJSON } = merge(defaultOptions, this._opts);
+
+    let manifest = manifestJSON
+    if (!manifest && manifestPath) {
+      manifest = JSON5.parse(readFileSync(manifestPath).toString())
+    }
 
     const parsedEntries: IEntriesOption = manifest
       ? extractEntries(
@@ -84,6 +91,10 @@ export default class ExtensionReloaderImpl extends AbstractPluginReloader implem
           compiler.options.output as Compiler["options"]["output"],
         )
       : entries;
+
+    if (!parsedEntries) {
+      throw new Error(`one of manifest/manifestJSON or entries must be passed to ExtReloader options`)
+    }
 
     this._eventAPI = new CompilerEventsFacade(compiler);
     this._injector = middlewareInjector(parsedEntries, { port, reloadPage });

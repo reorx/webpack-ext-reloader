@@ -1,16 +1,13 @@
-import { readFileSync } from "fs";
 import { flatMapDeep } from "lodash";
-import JSON5 from "json5";
 import { Compiler, Entry } from "webpack";
 import { bgScriptEntryErrorMsg, bgScriptManifestRequiredMsg } from "../messages/errors";
 
 export function extractEntries(
   webpackEntry: Entry,
-  manifestPath: string,
+  manifestJSON: any,
   webpackOutput: Compiler["options"]["output"] = {},
 ): IEntriesOption {
-  const manifestJson = JSON5.parse(readFileSync(manifestPath).toString()) as IExtensionManifest;
-  const { background, content_scripts } = manifestJson;
+  const { background, content_scripts } = manifestJSON as IExtensionManifest;
   const { filename } = webpackOutput;
 
   if (!filename) {
@@ -39,9 +36,10 @@ export function extractEntries(
         ),
       )
     : null;
-  return {
+  const entries = {
     background: bgWebpackEntry,
     contentScript: contentEntries as string[],
     extensionPage: null,
   };
+  return entries;
 }

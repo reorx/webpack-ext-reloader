@@ -165,7 +165,8 @@
   // ======================= Bootstraps the middleware =========================== //
   runtime.reload
     // in MV3 background service workers don't have access to the DOM
-    ? (typeof window === 'undefined' || extension.getBackgroundPage() === window) ? backgroundWorker() : extensionPageWorker()
+    ? (typeof window === 'undefined' || extension.getBackgroundPage() === window)
+      ? backgroundWorker() : extensionPageWorker()
     : contentScriptWorker();
 })();
 

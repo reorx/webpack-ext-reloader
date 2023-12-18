@@ -4,6 +4,7 @@ export interface IPluginOptions {
   port: number;
   reloadPage: boolean;
   manifest?: string;
+  manifestJSON?: any;
   entries?: IEntriesOption;
 }
 
