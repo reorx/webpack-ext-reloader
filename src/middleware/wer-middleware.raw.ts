@@ -82,26 +82,32 @@
       logger(`Could not create WebSocket in background worker: ${event}`, 'warn')
     }
 
+    const reloadTabsAndExt = () => {
+      tabs.query({ status: "complete" }).then(loadedTabs => {
+        loadedTabs.forEach(
+          tab => tab.id && tabs.sendMessage(tab.id, { type: SIGN_RELOAD }),
+        );
+        socket.send(
+          JSON.stringify({
+            type: SIGN_RELOADED,
+            payload: formatter(
+              `${timeFormatter(new Date())} - ${
+                manifest.name
+              } successfully reloaded`,
+            ),
+          }),
+        );
+        setTimeout(() => {
+          runtime.reload();
+        }, 100)
+      });
+    }
+
     socket.addEventListener("message", ({ data }: MessageEvent) => {
       const { type, payload } = JSON.parse(data);
 
       if (type === SIGN_CHANGE && (!payload || !payload.onlyPageChanged)) {
-        tabs.query({ status: "complete" }).then(loadedTabs => {
-          loadedTabs.forEach(
-            tab => tab.id && tabs.sendMessage(tab.id, { type: SIGN_RELOAD }),
-          );
-          socket.send(
-            JSON.stringify({
-              type: SIGN_RELOADED,
-              payload: formatter(
-                `${timeFormatter(new Date())} - ${
-                  manifest.name
-                } successfully reloaded`,
-              ),
-            }),
-          );
-          runtime.reload();
-        });
+        reloadTabsAndExt()
       } else {
         runtime.sendMessage({ type, payload });
       }
@@ -129,7 +135,8 @@
         ws.addEventListener("open", () => {
           clearInterval(intId);
           logger("Reconnected. Reloading plugin");
-          runtime.reload();
+
+          reloadTabsAndExt()
         });
 
       }, RECONNECT_INTERVAL);
