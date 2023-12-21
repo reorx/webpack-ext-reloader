@@ -41,6 +41,11 @@
       logger(`Whoops..chrome.runtime.lastError: ${  chrome.runtime.lastError.message}`, 'warn');
     }
 
+    // to keep background alive
+    setInterval(() => {
+      runtime.sendMessage({ type: SIGN_LOG, payload: 'ping' })
+    }, 20 * 1000)
+
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
       logger(`contentScriptWorker.onMessage, type=${type} payload=${payload}`)
       switch (type) {
@@ -50,12 +55,6 @@
           setTimeout(() => {
             reloadPage && window?.location.reload();
           }, 100)
-          break;
-        case SIGN_CHANGE:
-          logger('contentScriptWorker received SIGN_CHANGE')
-        case SIGN_LOG:
-          logger(`payload: ${payload}`);
-          sendResponse('ok, log')
           break;
         default:
           break;
@@ -74,6 +73,9 @@
       if (action.type === SIGN_CONNECT) {
         logger('on SIG_CONNECT')
         sendResponse(formatter("Connected to Web Extension Hot Reloader"));
+      } else {
+        logger(`on ${action.type}`)
+        sendResponse('pong')
       }
     });
 
