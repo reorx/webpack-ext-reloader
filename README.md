@@ -26,6 +26,12 @@ This is a fork from [`webpack-extension-reloader`](https://github.com/SimplifyJo
 
 You can simply check [reorx/webpack-chrome-boilerplate](https://github.com/reorx/webpack-chrome-boilerplate) to see how it works in a demo project.
 
+> [!CAUTION]
+>
+> 1. This plugin is supposed to work with extension with background page (which is called service worker in MV3), where the `chrome.runtime.reload()` is executed when changes happen. If your extension doesn't have a background page, you can separate the `manifest.json` file by environment, adding background for development mode. (Example can be found in this project: [github-toc-sidebar](https://github.com/reorx/github-toc-sidebar/blob/9b9e255d46561ece0f4109bbaf317a5a87063f36/webpack.config.js#L19))
+>
+> 2. Even with background page, the plugin is still not guaranteed to work all the time, due to the mechanism that Chrome would terminate a service worker when its not actively receiving events (see [The extension service worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle#idle-shutdown)). The easiest way to keep the service worker awake is to inspect it from the `chrome://extensions` page, see [Debugging the service worker](https://developer.chrome.com/docs/extensions/get-started/tutorial/service-worker-events).
+
 
 ### Using as a plugin
 
@@ -83,7 +89,7 @@ module.exports = {
 }
 ```
 
-**Note I**: `entry` or `manifest` are needed. If both are given, entry will override the information comming from `manifest.json`. If none are given the default `entry` values (see above) are used.
+**Note I**: `entries` or `manifest` are needed. If both are given, `entries` will override the information comming from `manifest.json`. If none are given the default `entries` values (see above) are used.
 
 And then just run your application with Webpack in watch mode:
 
