@@ -90,7 +90,6 @@
         loadedTabs.forEach(
           tab => {
             if (!tab.id) return
-            // logger(`sendMessage -> tab: ${SIGN_RELOAD}, ${tab.id}`)
             try {
               tabs.sendMessage(tab.id, { type: SIGN_RELOAD }).catch(e => {
                 console.log('ignore error when sendMessage to tabs')
