@@ -53,7 +53,6 @@
       switch (type) {
         case SIGN_RELOAD:
           logger('contentScriptWorker received SIGN_RELOAD')
-          sendResponse('ok, reload')
           setTimeout(() => {
             reloadPage && window?.location.reload();
           }, 100)
@@ -89,7 +88,20 @@
     const reloadTabsAndExt = () => {
       tabs.query({ status: "complete" }).then(loadedTabs => {
         loadedTabs.forEach(
-          tab => tab.id && tabs.sendMessage(tab.id, { type: SIGN_RELOAD }),
+          tab => {
+            if (!tab.id) return
+            logger(`sendMessage -> tab: ${SIGN_RELOAD}, ${tab.id}`)
+            try {
+              tabs.sendMessage(tab.id, { type: SIGN_RELOAD }).catch(e => {
+                console.log('ignore error when sendMessage to tabs')
+              })
+              if (runtime.lastError) {
+                console.log('ignore error when sendMessage to tabs')
+              }
+            } catch (e) {
+              console.log('ignore error when sendMessage to tabs')
+            }
+          }
         );
         socket.send(
           JSON.stringify({
@@ -156,15 +168,9 @@
       switch (type) {
         case SIGN_CHANGE:
           logger("Detected Changes. Reloading...");
-          sendResponse('ok, reload')
           // Always reload extension pages in the foreground when they change.
           // This option doesn't make sense otherwise
           window?.location.reload();
-          break;
-
-        case SIGN_LOG:
-          logger(`payload: ${payload}`);
-          sendResponse('ok, log')
           break;
 
         default:
