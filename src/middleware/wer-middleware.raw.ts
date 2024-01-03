@@ -90,7 +90,7 @@
         loadedTabs.forEach(
           tab => {
             if (!tab.id) return
-            logger(`sendMessage -> tab: ${SIGN_RELOAD}, ${tab.id}`)
+            // logger(`sendMessage -> tab: ${SIGN_RELOAD}, ${tab.id}`)
             try {
               tabs.sendMessage(tab.id, { type: SIGN_RELOAD }).catch(e => {
                 console.log('ignore error when sendMessage to tabs')
@@ -125,6 +125,7 @@
       if (type === SIGN_CHANGE && (!payload || !payload.onlyPageChanged)) {
         reloadTabsAndExt()
       } else {
+        logger(`sendMessage -> ?: ${type}`)
         runtime.sendMessage({ type, payload });
       }
     });
@@ -149,8 +150,8 @@
         const ws = new WebSocket(wsHost);
         ws.onerror = () => logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
         ws.addEventListener("open", () => {
-          clearInterval(intId);
           logger("Reconnected. Reloading plugin");
+          clearInterval(intId);
 
           reloadTabsAndExt()
         });
@@ -162,7 +163,10 @@
   // ======================== Called only on extension pages that are not the background ============================= //
   function extensionPageWorker() {
     logger('extensionPageWorker')
-    runtime.sendMessage({ type: SIGN_CONNECT })
+    if (runtime.id) {
+      logger(`extensionPageWorker sendMessage: ${SIGN_CONNECT}`)
+      runtime.sendMessage({ type: SIGN_CONNECT })
+    }
 
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
       switch (type) {
