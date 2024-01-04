@@ -14,6 +14,7 @@
 
   const reloadPage: boolean = ("<%= reloadPage %>" as "true" | "false") === "true";
   const wsHost = "<%= WSHost %>";
+  const httpHost = "<%= HTTPHost %>";
   const {
     SIGN_CHANGE,
     SIGN_RELOAD,
@@ -21,7 +22,7 @@
     SIGN_LOG,
     SIGN_CONNECT,
   } = signals;
-  const { RECONNECT_INTERVAL, RECONNECT_MAX_RETRY, SOCKET_ERR_CODE_REF } = config;
+  const { RECONNECT_INTERVAL, RECONNECT_MAX_RETRY, SOCKET_ERR_CODE_REF, HTTP_SUCCESS_RESPONSE } = config;
 
   const { extension, runtime, tabs } = chrome;
   const manifest = runtime.getManifest();
@@ -87,7 +88,7 @@
       logger(`Could not create WebSocket in background worker: ${event}`, 'warn')
     }
 
-    const reloadTabsAndExt = () => {
+    const reloadTabsAndExt = (tellServer = true) => {
       tabs.query({ status: "complete" }).then(loadedTabs => {
         loadedTabs.forEach(
           tab => {
@@ -104,9 +105,9 @@
             }
           }
         );
-        try {
+        if (tellServer) {
           // only send message when socket is open
-          socket.OPEN && socket.send(
+          socket.readyState === 1 && socket.send(
             JSON.stringify({
               type: SIGN_RELOADED,
               payload: formatter(
@@ -116,8 +117,6 @@
               ),
             }),
           );
-        } catch (e) {
-          logger(`socket.send failed: ${e}`, 'warn')
         }
         setTimeout(() => {
           runtime.reload();
@@ -144,18 +143,13 @@
       if (code === 1006) {
         // this is the code when webpack is not running, other code should be omitted
       } else {
-        logger(
-          `Socket connection closed. Code ${code}. See more in ${
-            SOCKET_ERR_CODE_REF
-          }`,
-          "warn",
-        );
+        logger(`Socket connection closed. Code ${code}. See more in ${SOCKET_ERR_CODE_REF}`, "warn");
         return
       }
 
       let retryCount = 0;
 
-      const retryWebSocket = () => new Promise<void>((resolve, reject) => {
+      const retryConnectToServer = () => {
         retryCount++
         if (retryCount > RECONNECT_MAX_RETRY) {
           logger('Max retry count reached. Stopping reconnection attempts')
@@ -163,22 +157,25 @@
         }
         logger("Attempting to reconnect (tip: Check if Webpack is running)");
 
-        const ws = new WebSocket(wsHost);
-        ws.onerror = (e) => {
-          logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
-          reject(e)
-        }
-        ws.addEventListener("open", () => {
-          logger("Reconnected. Reloading plugin");
+        fetch(httpHost).then((res) => {
+          // read body
+          res.text().then((text) => {
+            if (text === HTTP_SUCCESS_RESPONSE) {
+              logger("Reconnected. Reloading plugin");
 
-          reloadTabsAndExt()
-          resolve()
-        });
-      }).catch(e => {
-        console.log(`call retryWebSocket again after catch: ${e}`)
-        setTimeout(retryWebSocket, RECONNECT_INTERVAL)
-      })
-      setTimeout(retryWebSocket, RECONNECT_INTERVAL)
+              // do not tell server about the reload, because the server is possibly not ready
+              reloadTabsAndExt(false)
+            } else {
+              logger('Connected to a wrong server, stop retrying, please make sure webpack-ext-reloader is listening an exclusive port.', 'warn')
+            }
+          })
+        }).catch(e => {
+          logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
+          setTimeout(retryConnectToServer, RECONNECT_INTERVAL)
+        })
+      }
+
+      setTimeout(retryConnectToServer, RECONNECT_INTERVAL)
     });
   }
 
