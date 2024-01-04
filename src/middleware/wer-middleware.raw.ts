@@ -52,10 +52,12 @@
       logger(`contentScriptWorker.onMessage, type=${type} payload=${payload}`)
       switch (type) {
         case SIGN_RELOAD:
-          logger('contentScriptWorker received SIGN_RELOAD')
-          setTimeout(() => {
-            reloadPage && window?.location.reload();
-          }, 100)
+          logger(`contentScriptWorker received SIGN_RELOAD: ${JSON.stringify(payload)}`)
+          if (payload.contentChanged) {
+            setTimeout(() => {
+              reloadPage && window?.location.reload();
+            }, 100)
+          }
           break;
         default:
           break;
@@ -124,8 +126,11 @@
 
     socket.addEventListener("message", ({ data }: MessageEvent) => {
       const { type, payload } = JSON.parse(data);
+      console.log('on ws message', type, payload)
 
-      if (type === SIGN_CHANGE && (!payload || !payload.onlyPageChanged)) {
+      // if (type === SIGN_CHANGE && (!payload || payload.onlyPageChanged)) {
+      if (type === SIGN_CHANGE && (!payload || payload.bgChanged)) {
+        // only reload when background is changed
         reloadTabsAndExt()
       } else {
         logger(`sendMessage -> ?: ${type}`)
@@ -181,10 +186,13 @@
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
       switch (type) {
         case SIGN_CHANGE:
-          logger("Detected Changes. Reloading...");
-          // Always reload extension pages in the foreground when they change.
-          // This option doesn't make sense otherwise
-          window?.location.reload();
+          logger(`extensionPageWorker received SIGN_CHANGE: ${JSON.stringify(payload)}`)
+          if (payload.pageChanged) {
+            logger("Detected Changes. Reloading...");
+            // Always reload extension pages in the foreground when they change.
+            // This option doesn't make sense otherwise
+            window?.location.reload();
+          }
           break;
 
         default:

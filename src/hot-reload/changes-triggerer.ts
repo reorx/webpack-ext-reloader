@@ -1,5 +1,5 @@
-import { info } from "../utils/logger";
-import HotReloaderServer from "./HotReloaderServer";
+import { info } from '../utils/logger';
+import HotReloaderServer from './HotReloaderServer';
 
 const changesTriggerer: TriggererFactory = (port: number, reloadPage: boolean) => {
   const server = new HotReloaderServer(port);
@@ -7,7 +7,7 @@ const changesTriggerer: TriggererFactory = (port: number, reloadPage: boolean) =
   info("[ Starting the Web Extension Hot Reload Server... ]");
   server.listen();
 
-  return (onlyPageChanged: boolean): Promise<any> => server.signChange(reloadPage, onlyPageChanged);
+  return (bgChanged: boolean, contentChanged: boolean, pageChanged: boolean): Promise<any> => server.signChange(reloadPage, bgChanged, contentChanged, pageChanged);
 };
 
 export default changesTriggerer;

@@ -1,10 +1,10 @@
-import { zip } from "lodash";
+import { zip } from 'lodash';
 import {
   OPEN,
   Server,
-} from "ws";
+} from 'ws';
 
-import { Agent } from "@kingyue/useragent";
+import { Agent } from '@kingyue/useragent';
 
 import {
   FAST_RELOAD_CALLS,
@@ -13,17 +13,19 @@ import {
   NEW_FAST_RELOAD_CALLS,
   NEW_FAST_RELOAD_CHROME_VERSION,
   NEW_FAST_RELOAD_DEBOUNCING_FRAME,
-} from "../constants/fast-reloading.constants";
+} from '../constants/fast-reloading.constants';
 import {
   debounceSignal,
   fastReloadBlocker,
-} from "../utils/block-protection";
-import { signChange } from "../utils/signals";
+} from '../utils/block-protection';
+import { signChange } from '../utils/signals';
 
 export default class SignEmitter {
   private _safeSignChange: (
     reloadPage: boolean,
-    onlyPageChanged: boolean,
+    bgChanged: boolean,
+    contentChanged: boolean,
+    pageChanged: boolean,
     onSuccess: (val?: any) => void,
     onError: (err: Error) => void,
   ) => void;
@@ -48,16 +50,16 @@ export default class SignEmitter {
     }
   }
 
-  public safeSignChange(reloadPage: boolean, onlyPageChanged: boolean): Promise<any> {
+  public safeSignChange(reloadPage: boolean, bgChanged: boolean, contentChanged: boolean, pageChanged: boolean): Promise<any> {
     return new Promise((res, rej) => {
-      this._safeSignChange(reloadPage, onlyPageChanged, res, rej);
+      this._safeSignChange(reloadPage, bgChanged, contentChanged, pageChanged, res, rej);
     });
   }
 
   private _setupSafeSignChange() {
-    return (reloadPage: boolean, onlyPageChanged: boolean, onSuccess: () => void, onError: (err: Error) => void) => {
+    return (reloadPage: boolean, bgChanged: boolean, contentChanged: boolean, pageChanged: boolean, onSuccess: () => void, onError: (err: Error) => void) => {
       try {
-        this._sendMsg(signChange({ reloadPage, onlyPageChanged }));
+        this._sendMsg(signChange({ reloadPage, bgChanged, contentChanged, pageChanged }));
         onSuccess();
       } catch (err) {
         onError(err);

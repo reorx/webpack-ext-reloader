@@ -20,7 +20,7 @@ declare type MiddlewareInjector = (
   { port, reloadPage }: IMiddlewareTemplateParams,
 ) => InjectMiddleware;
 
-declare type Triggerer = (onlyPageChanged: boolean) => Promise<any>;
+declare type Triggerer = (bgChanged: boolean, contentChanged: boolean, pageChanged: boolean) => Promise<any>;
 
 declare type TriggererFactory = (
   port: number,

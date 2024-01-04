@@ -1,9 +1,9 @@
-import { Server } from "ws";
+import { Server } from 'ws';
 
-import { parse } from "@kingyue/useragent";
+import { parse } from '@kingyue/useragent';
 
-import { info } from "../utils/logger";
-import SignEmitter from "./SignEmitter";
+import { info } from '../utils/logger';
+import SignEmitter from './SignEmitter';
 
 export default class HotReloaderServer {
   private _server: Server;
@@ -26,9 +26,9 @@ export default class HotReloaderServer {
     });
   }
 
-  public signChange(reloadPage: boolean, onlyPageChanged: boolean): Promise<any> {
+  public signChange(reloadPage: boolean, bgChanged: boolean, contentChanged: boolean, pageChanged: boolean): Promise<any> {
     if (this._signEmitter) {
-      return this._signEmitter.safeSignChange(reloadPage, onlyPageChanged);
+      return this._signEmitter.safeSignChange(reloadPage, bgChanged, contentChanged, pageChanged);
     }
     return Promise.resolve(null);
   }

@@ -1,17 +1,26 @@
-import { merge } from "lodash";
-import { readFileSync } from "fs";
-import { Chunk, Compilation, Compiler, Entry, version } from "webpack";
-import JSON5 from "json5";
-import { changesTriggerer } from "./hot-reload";
-import { onlyOnDevelopmentMsg } from "./messages/warnings";
-import { middlewareInjector } from "./middleware";
-import defaultOptions from "./utils/default-options";
-import { warn } from "./utils/logger";
-import { extractEntries } from "./utils/manifest";
-import AbstractPluginReloader from "./webpack/AbstractExtensionReloader";
-import CompilerEventsFacade from "./webpack/CompilerEventsFacade";
+import { readFileSync } from 'fs';
+import JSON5 from 'json5';
+import { merge } from 'lodash';
+import {
+  Chunk,
+  Compilation,
+  Compiler,
+  Entry,
+  version,
+} from 'webpack';
 
-import { IExtensionReloaderInstance, IPluginOptions } from "../typings/webpack-ext-reloader";
+import {
+  IExtensionReloaderInstance,
+  IPluginOptions,
+} from '../typings/webpack-ext-reloader';
+import { changesTriggerer } from './hot-reload';
+import { onlyOnDevelopmentMsg } from './messages/warnings';
+import { middlewareInjector } from './middleware';
+import defaultOptions from './utils/default-options';
+import { warn } from './utils/logger';
+import { extractEntries } from './utils/manifest';
+import AbstractPluginReloader from './webpack/AbstractExtensionReloader';
+import CompilerEventsFacade from './webpack/CompilerEventsFacade';
 
 export default class ExtensionReloaderImpl extends AbstractPluginReloader implements IExtensionReloaderInstance {
   private _opts?: IPluginOptions;
@@ -44,36 +53,34 @@ export default class ExtensionReloaderImpl extends AbstractPluginReloader implem
       }
     }
 
-    const contentOrBgChanged = changedChunks.some(({ name }) => {
-      let contentChanged = false;
-      const bgChanged = name === background;
+    const bgChanged = changedChunks.some(({ name }) => name === background);
+
+    const contentChanged = changedChunks.some(({ name }) => {
+      let _contentChanged = false;
 
       if (Array.isArray(contentScript)) {
-        contentChanged = contentScript.some((script) => script === name);
+        _contentChanged = contentScript.some((script) => script === name);
       } else {
-        contentChanged = name === contentScript;
+        _contentChanged = name === contentScript;
       }
 
-      return contentChanged || bgChanged;
+      return _contentChanged;
     });
 
-    //
-    const onlyPageChanged =
-      !contentOrBgChanged &&
-      changedChunks.some(({ name }) => {
-        let pageChanged = false;
+    const pageChanged = changedChunks.some(({ name }) => {
+      let _pageChanged = false;
 
-        if (Array.isArray(extensionPage)) {
-          pageChanged = extensionPage.some((script) => script === name);
-        } else {
-          pageChanged = name === extensionPage;
-        }
-        //
+      if (Array.isArray(extensionPage)) {
+        _pageChanged = extensionPage.some((script) => script === name);
+      } else {
+        _pageChanged = name === extensionPage;
+      }
+      //
 
-        return pageChanged;
-      });
+      return _pageChanged;
+    });
 
-    return { contentOrBgChanged, onlyPageChanged };
+    return { bgChanged, contentChanged, pageChanged };
   }
 
   public _registerPlugin(compiler: Compiler) {
@@ -109,10 +116,10 @@ export default class ExtensionReloaderImpl extends AbstractPluginReloader implem
       // reload page after first emit
       if (!this._triggerer) this._triggerer = changesTriggerer(port, reloadPage);
 
-      const { contentOrBgChanged, onlyPageChanged } = this._whatChanged(comp.chunks, parsedEntries);
+      const { bgChanged, contentChanged, pageChanged} = this._whatChanged(comp.chunks, parsedEntries);
 
-      if (contentOrBgChanged || onlyPageChanged) {
-        this._triggerer(onlyPageChanged);
+      if (bgChanged || contentChanged || pageChanged) {
+        this._triggerer(bgChanged, contentChanged, pageChanged);
       }
     });
   }
