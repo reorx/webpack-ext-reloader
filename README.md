@@ -15,7 +15,7 @@ npm i -D @reorx/webpack-ext-reloader
 
 ## What is this?
 
-This is a webpack plugin that allows you to bring hot reloading functionality to WebExtensions, essentially `webpack-dev-server`, but for (WebExtensions)[https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions].
+This is a webpack plugin that allows you to bring hot reloading functionality to WebExtensions, essentially `webpack-dev-server`, but for [WebExtensions](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions).
 
 This is a fork from [`webpack-extension-reloader`](https://github.com/SimplifyJobs/webpack-ext-reloader), maintained and updated by Reorx. The goal here is to continue to support the latest version of webpack and Chrome Extension Manifest V3.
 
