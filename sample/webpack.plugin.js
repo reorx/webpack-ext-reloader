@@ -33,7 +33,7 @@ module.exports = {
         background: "background",
         extensionPage: "popup",
       },
-      port: targetBrowser === "chrome" ? 9090 : 9091,
+      port: targetBrowser === "chrome" ? 9110 : 9111,
       reloadPage: false, // can also be true!
       // Also possible to use
       // manifest: resolve(__dirname, "manifest.json")

@@ -76,7 +76,7 @@ module.exports = {
   //...
   plugins: [
     new ExtReloader({
-      port: 9090, // Which port use to create the server
+      port: 9110, // Which port use to create the server
       reloadPage: true, // Force the reload of the page also
       entries: { // The entries used for the content/background scripts or extension pages
         contentScript: 'content-script',
