@@ -102,16 +102,20 @@
             }
           }
         );
-        socket.send(
-          JSON.stringify({
-            type: SIGN_RELOADED,
-            payload: formatter(
-              `${timeFormatter(new Date())} - ${
-                manifest.name
-              } successfully reloaded`,
-            ),
-          }),
-        );
+        try {
+          socket.send(
+            JSON.stringify({
+              type: SIGN_RELOADED,
+              payload: formatter(
+                `${timeFormatter(new Date())} - ${
+                  manifest.name
+                } successfully reloaded`,
+              ),
+            }),
+          );
+        } catch (e) {
+          logger(`socket.send failed: ${e}`, 'warn')
+        }
         setTimeout(() => {
           runtime.reload();
         }, 100)
@@ -146,14 +150,18 @@
           logger('Max retry count reached. Stopping reconnection attempts')
         }
         logger("Attempting to reconnect (tip: Check if Webpack is running)");
-        const ws = new WebSocket(wsHost);
-        ws.onerror = () => logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
-        ws.addEventListener("open", () => {
-          logger("Reconnected. Reloading plugin");
-          clearInterval(intId);
+        try {
+          const ws = new WebSocket(wsHost);
+          ws.onerror = () => logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
+          ws.addEventListener("open", () => {
+            logger("Reconnected. Reloading plugin");
+            clearInterval(intId);
 
-          reloadTabsAndExt()
-        });
+            reloadTabsAndExt()
+          });
+        } catch (e) {
+          logger(`reconnect socket failed: ${e}`, 'warn')
+        }
 
       }, RECONNECT_INTERVAL);
     });
