@@ -187,6 +187,13 @@
       runtime.sendMessage({ type: SIGN_CONNECT })
     }
 
+    // to keep background alive
+    setInterval(() => {
+      if (runtime.id) {
+        runtime.sendMessage({ type: SIGN_LOG, payload: 'ping' })
+      }
+    }, 20 * 1000)
+
     runtime.onMessage.addListener(({ type, payload }: { type: string; payload: any }, sender, sendResponse) => {
       switch (type) {
         case SIGN_CHANGE:
