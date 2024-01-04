@@ -1,8 +1,12 @@
-import { assert } from "chai";
-import { spy, stub } from "sinon";
-import ws = require("ws");
-import changesTriggerer from "../src/hot-reload/changes-triggerer";
-import HotReloaderServer from "../src/hot-reload/HotReloaderServer";
+import { assert } from 'chai';
+import {
+  spy,
+  stub,
+} from 'sinon';
+import ws = require('ws');
+
+import { changesTriggerer } from '../src/hot-reload';
+import HotReloaderServer from '../src/hot-reload/HotReloaderServer';
 
 describe("changesTriggerer", () => {
   let listenSpy;
