@@ -140,12 +140,18 @@
     });
 
     socket.addEventListener("close", ({ code }: CloseEvent) => {
-      logger(
-        `Socket connection closed. Code ${code}. See more in ${
-          SOCKET_ERR_CODE_REF
-        }`,
-        "warn",
-      );
+      // https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1
+      if (code === 1006) {
+        // this is the code when webpack is not running, other code should be omitted
+      } else {
+        logger(
+          `Socket connection closed. Code ${code}. See more in ${
+            SOCKET_ERR_CODE_REF
+          }`,
+          "warn",
+        );
+        return
+      }
 
       let retryCount = 0;
 
