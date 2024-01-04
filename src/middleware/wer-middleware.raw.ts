@@ -105,7 +105,8 @@
           }
         );
         try {
-          socket.send(
+          // only send message when socket is open
+          socket.OPEN && socket.send(
             JSON.stringify({
               type: SIGN_RELOADED,
               payload: formatter(
@@ -120,7 +121,7 @@
         }
         setTimeout(() => {
           runtime.reload();
-        }, 100)
+        }, 200)
       });
     }
 
