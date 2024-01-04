@@ -143,27 +143,30 @@
 
       let retryCount = 0;
 
-      const intId = setInterval(() => {
+      const retryWebSocket = () => new Promise<void>((resolve, reject) => {
         retryCount++
         if (retryCount > RECONNECT_MAX_RETRY) {
-          clearInterval(intId);
           logger('Max retry count reached. Stopping reconnection attempts')
+          return
         }
         logger("Attempting to reconnect (tip: Check if Webpack is running)");
-        try {
-          const ws = new WebSocket(wsHost);
-          ws.onerror = () => logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
-          ws.addEventListener("open", () => {
-            logger("Reconnected. Reloading plugin");
-            clearInterval(intId);
 
-            reloadTabsAndExt()
-          });
-        } catch (e) {
-          logger(`reconnect socket failed: ${e}`, 'warn')
+        const ws = new WebSocket(wsHost);
+        ws.onerror = (e) => {
+          logger(`Error trying to re-connect. Reattempting in ${RECONNECT_INTERVAL / 1000}s`, "warn");
+          reject(e)
         }
+        ws.addEventListener("open", () => {
+          logger("Reconnected. Reloading plugin");
 
-      }, RECONNECT_INTERVAL);
+          reloadTabsAndExt()
+          resolve()
+        });
+      }).catch(e => {
+        console.log(`call retryWebSocket again after catch: ${e}`)
+        setTimeout(retryWebSocket, RECONNECT_INTERVAL)
+      })
+      setTimeout(retryWebSocket, RECONNECT_INTERVAL)
     });
   }
 
