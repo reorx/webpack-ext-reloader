@@ -77,7 +77,7 @@
       if (action.type === SIGN_CONNECT) {
         logger('on SIG_CONNECT')
         sendResponse(formatter("Connected to Web Extension Hot Reloader"));
-      } else {
+      } else if (action.type === SIGN_LOG) {
         logger(`on ${action.type}`)
         sendResponse('pong')
       }
