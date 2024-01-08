@@ -33,6 +33,10 @@
   const timeFormatter = (date: Date) =>
     date.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
 
+  const ignoreSendError = (sendFrom: string, sendTo: string) => (e: any) => {
+    console.warn(`ignore error of sendMessage from ${sendFrom} to ${sendTo}`)
+  }
+
   // ========================== Called only on content scripts ============================== //
   function contentScriptWorker() {
     logger('contentScriptWorker')
@@ -45,7 +49,7 @@
     // to keep background alive
     setInterval(() => {
       if (runtime?.id) {
-        runtime.sendMessage({ type: SIGN_LOG, payload: 'ping' })
+        runtime.sendMessage({ type: SIGN_LOG, payload: 'ping' }).catch(ignoreSendError('content_script', 'background'))
       }
     }, 20 * 1000)
 
@@ -93,16 +97,7 @@
         loadedTabs.forEach(
           tab => {
             if (!tab.id) return
-            try {
-              tabs.sendMessage(tab.id, { type: SIGN_RELOAD }).catch(e => {
-                console.log('ignore error when sendMessage to tabs')
-              })
-              if (runtime.lastError) {
-                console.log('ignore error when sendMessage to tabs')
-              }
-            } catch (e) {
-              console.log('ignore error when sendMessage to tabs')
-            }
+            tabs.sendMessage(tab.id, { type: SIGN_RELOAD }).catch(ignoreSendError('background', 'tabs'))
           }
         );
         if (tellServer) {
@@ -134,7 +129,7 @@
         reloadTabsAndExt()
       } else {
         logger(`sendMessage -> ?: ${type}`)
-        runtime.sendMessage({ type, payload });
+        runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'));
       }
     });
 
@@ -190,7 +185,7 @@
     // to keep background alive
     setInterval(() => {
       if (runtime.id) {
-        runtime.sendMessage({ type: SIGN_LOG, payload: 'ping' })
+        runtime.sendMessage({ type: SIGN_LOG, payload: 'ping' }).catch(ignoreSendError('extension_page', 'background'))
       }
     }, 20 * 1000)
 
