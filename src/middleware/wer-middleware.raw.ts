@@ -90,44 +90,61 @@
       logger(`Could not create WebSocket in background worker: ${event}`, 'warn')
     }
 
-    const reloadTabsAndExt = (tellServer = true) => {
-      tabs.query({ status: "complete" }).then(loadedTabs => {
+    const reloadTabs = (allTabs = false) => {
+      let tabsQuery: chrome.tabs.QueryInfo = { active: true, currentWindow: true }
+      if (allTabs) {
+        tabsQuery = { status: "complete"  }
+      }
+
+      return tabs.query(tabsQuery).then(loadedTabs => {
         loadedTabs.forEach(
           tab => {
             if (!tab.id) return
             tabs.sendMessage(tab.id, { type: SIGN_RELOAD }).catch(ignoreSendError('background', 'tabs'))
           }
         );
-        if (tellServer) {
-          // only send message when socket is open
-          socket.readyState === 1 && socket.send(
-            JSON.stringify({
-              type: SIGN_RELOADED,
-              payload: formatter(
-                `${timeFormatter(new Date())} - ${
-                  manifest.name
-                } successfully reloaded`,
-              ),
-            }),
-          );
-        }
-        setTimeout(() => {
-          runtime.reload();
-        }, 200)
       });
+    }
+
+    const reloadExt = (tellServer = true) => {
+      if (tellServer) {
+        // only send message when socket is open
+        socket.readyState === 1 && socket.send(
+          JSON.stringify({
+            type: SIGN_RELOADED,
+            payload: formatter(
+              `${timeFormatter(new Date())} - ${
+                manifest.name
+              } successfully reloaded`,
+            ),
+          }),
+        );
+      }
+      setTimeout(() => {
+        runtime.reload();
+      }, 200)
     }
 
     socket.addEventListener("message", ({ data }: MessageEvent) => {
       const { type, payload } = JSON.parse(data);
-      console.log('on ws message', type, payload)
+      // console.log('on ws message', type, payload)
 
       // if (type === SIGN_CHANGE && (!payload || payload.onlyPageChanged)) {
-      if (type === SIGN_CHANGE && (!payload || payload.bgChanged)) {
-        // only reload when background is changed
-        reloadTabsAndExt()
+      // SIGN_CHANGE should be the only type of message background get from server
+      if (type === SIGN_CHANGE) {
+        if (!payload || payload.bgChanged) {
+          // reload tabs and extension
+          reloadTabs().then(() => reloadExt())
+        } else if (payload.contentChanged) {
+          // reload tabs only
+          reloadTabs()
+        } else if (payload.pageChanged) {
+          // proxy message to extension page to reload, which may not be opened at the time
+          runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'));
+        }
       } else {
-        logger(`sendMessage -> ?: ${type}`)
-        runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'));
+        logger(`get other type of message from the server: ${type}, ${JSON.stringify(payload)}`)
+        // runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'));
       }
     });
 
@@ -157,7 +174,7 @@
               logger("Reconnected. Reloading plugin");
 
               // do not tell server about the reload, because the server is possibly not ready
-              reloadTabsAndExt(false)
+              reloadTabs().then(() => reloadExt(false))
             } else {
               logger('Connected to a wrong server, stop retrying, please make sure webpack-ext-reloader is listening an exclusive port.', 'warn')
             }
