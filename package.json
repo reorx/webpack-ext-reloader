@@ -1,6 +1,6 @@
 {
   "name": "@reorx/webpack-ext-reloader",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "private": false,
   "description": "Watch for file changes and reload WebExtensions on browsers.",
   "main": "dist/webpack-ext-reloader.js",
