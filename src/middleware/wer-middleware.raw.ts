@@ -58,11 +58,9 @@
       switch (type) {
         case SIGN_RELOAD:
           logger(`contentScriptWorker received SIGN_RELOAD: ${JSON.stringify(payload)}`)
-          if (payload.contentChanged) {
-            setTimeout(() => {
-              reloadPage && window?.location.reload();
-            }, 100)
-          }
+          setTimeout(() => {
+            reloadPage && window?.location.reload();
+          }, 100)
           break;
         default:
           break;
