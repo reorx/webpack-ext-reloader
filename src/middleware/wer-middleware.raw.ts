@@ -127,7 +127,7 @@
 
     socket.addEventListener("message", ({ data }: MessageEvent) => {
       const { type, payload } = JSON.parse(data);
-      // console.log('on ws message', type, payload)
+      console.log('on ws message', type, payload)
 
       // if (type === SIGN_CHANGE && (!payload || payload.onlyPageChanged)) {
       // SIGN_CHANGE should be the only type of message background get from server
@@ -208,12 +208,8 @@
       switch (type) {
         case SIGN_CHANGE:
           logger(`extensionPageWorker received SIGN_CHANGE: ${JSON.stringify(payload)}`)
-          if (payload.pageChanged) {
-            logger("Detected Changes. Reloading...");
-            // Always reload extension pages in the foreground when they change.
-            // This option doesn't make sense otherwise
-            window?.location.reload();
-          }
+          // Always reload extension pages in the foreground when they change.
+          window?.location.reload();
           break;
 
         default:
