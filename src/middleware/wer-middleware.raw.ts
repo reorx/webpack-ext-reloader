@@ -132,16 +132,26 @@
       // if (type === SIGN_CHANGE && (!payload || payload.onlyPageChanged)) {
       // SIGN_CHANGE should be the only type of message background get from server
       if (type === SIGN_CHANGE) {
-        if (!payload || payload.bgChanged) {
-          // reload tabs and extension
-          reloadTabs().then(() => reloadExt())
-        } else if (payload.contentChanged) {
-          // reload tabs only
-          reloadTabs()
-        } else if (payload.pageChanged) {
-          // proxy message to extension page to reload, which may not be opened at the time
-          runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'));
-        }
+        const shouldReloadExt = !payload || payload.bgChanged;
+        // to avoid "Extension context invalidated" error, if extension is reloaded, content scripts should also be reloaded, see https://stackoverflow.com/a/55336841/596206
+        const shouldReloadTabs = shouldReloadExt || payload.contentChanged;
+        // reload extension will close all the extension pages, so reload pages is only necessary when extension reload is not needed
+        const shouldReloadPages = payload.pageChanged && !shouldReloadExt;
+        logger(`reload vars: shouldReloadExt=${shouldReloadExt} shouldReloadTabs=${shouldReloadTabs} shouldReloadPages=${shouldReloadPages}`);
+
+        (async () => {
+          if (shouldReloadTabs) {
+            await reloadTabs()
+          }
+          if (shouldReloadPages) {
+            // proxy message to extension page to reload, which may not be opened at the time
+            runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'))
+          }
+          if (shouldReloadExt) {
+            reloadExt()
+          }
+        })();
+
       } else {
         logger(`get other type of message from the server: ${type}, ${JSON.stringify(payload)}`)
         // runtime.sendMessage({ type, payload }).catch(ignoreSendError('background', 'others'));
